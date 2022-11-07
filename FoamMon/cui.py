@@ -226,7 +226,6 @@ class ScreenParent(urwid.WidgetWrap):
         if key == 'Q' or key == 'q':
             self.cases.running = False
             raise urwid.ExitMainLoop()
-            # sys.exit(1)
         elif self.input_mode:
             if key != "enter" and key != "backspace":
                 self.input_txt += key

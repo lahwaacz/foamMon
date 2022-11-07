@@ -1,4 +1,3 @@
-# Log.py
 import os
 import re
 import time
@@ -61,14 +60,14 @@ class Log():
         return self.get_header_value("PID")
 
     @property
-    def getctime(self):
-        return os.path.getctime(self.path)
+    def getmtime(self):
+        return os.path.getmtime(self.path)
 
     @property
     def active(self):
         if not self.log:
             return False
-        return (time.time() - self.getctime) < 60.0
+        return (time.time() - self.getmtime) < 60.0
 
     def cache_header(self):
         """ read LEN_HEADER lines from log """

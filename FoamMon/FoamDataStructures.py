@@ -183,30 +183,26 @@ class Case():
         self.path = path
         self.folder = os.path.basename(self.path)
         self.log_format = log_format
-        self.log_fns = self.find_logs(self.log_format)
-        self.current_log_fn = self.find_recent_log_fn()
-        self.current_log = Log(self.current_log_fn, self)
         self.log_filter = log_filter
 
-        if summary:
-            if self.log.active:
-                ret = self.print_status_short()
-                if ret:
-                    print(ret)
+        self.log_fns = []
+        self.current_log_fn = ""
+        self.current_log = None
+        self.refresh()
+
+        if summary and self.log.active:
+            ret = self.print_status_short()
+            if ret:
+                print(ret)
 
     @property
     def log(self):
         return self.current_log
 
     def refresh(self):
-        log_fns = self.find_logs(self.log_format)
-        if set(log_fns) == set(self.log_fns):
-            return
-        self.log_fns = log_fns
+        self.log_fns = list(self.find_logs(self.log_format))
         current_log_fn = self.find_recent_log_fn()
-        if self.current_log_fn == current_log_fn:
-            return self.current_log
-        else:
+        if self.current_log_fn != current_log_fn:
             self.current_log_fn = current_log_fn
             self.current_log = Log(current_log_fn, self)
 
@@ -233,15 +229,12 @@ class Case():
         return self.log.get_latest_value(regex, self.log.cached_body)
 
     def find_logs(self, log_format):
-       """ returns a list of filenames and ctimes """
-       # print(self.path)
-       r, d, files = next(walk(self.path))
-       # TODO use regex to find logs
-       files = list(filter(lambda x: log_format in x, files))
-       files = [os.path.join(r, f) for f in files]
-       ctimes = [os.path.getctime(os.path.join(self.path, f)) for f in files]
-       # print(self.path, files)
-       return list(zip(ctimes, files))
+        """ returns a list of filenames and mtimes """
+        for entry in os.scandir(self.path):
+            # TODO use regex to find logs
+            if log_format not in entry.name:
+                continue
+            yield entry.path, entry.stat().st_mtime
 
     @property
     def last_timestep_ondisk(self):
@@ -277,8 +270,8 @@ class Case():
 
     def find_recent_log_fn(self):
         try:
-            ctimes, files = zip(*self.log_fns)
-            latest_index = ctimes.index(max(ctimes))
+            files, mtimes = zip(*self.log_fns)
+            latest_index = mtimes.index(max(mtimes))
             return files[latest_index]
         except:
             return False
