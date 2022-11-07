@@ -1,4 +1,3 @@
-from docopt import docopt
 from colorama import Fore, Back, Style
 # from datetime import datetime, timedelta
 import datetime

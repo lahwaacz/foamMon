@@ -1,40 +1,35 @@
-#!/usr/bin/python
-"""
-    A small tool to check OpenFOAM log files for simulation progress
-    and save points
+#! /usr/bin/env python3
 
-    Usage:
-        timeleft.py [options]
-
-    Options:
-        -h --help           Show this screen
-        -v --version        Print version and exit
-        --progressbar (True|False) Display the progressbar [default: True]
-        --folder (True|False)      Display the foldername  [default: True]
-        --logfile (True|False)     Display the filename of the logfile [default: True]
-        --time (True|False)        Display the the current simulation time [default: True]
-        --writeout (True|False)    Display expected writeout [default: True]
-        --remaining (True|False)   Display expected remaining simulation time [default: True]
-        --custom_filter=filter     Further overview mode filter [default: {}]
-"""
-
-from docopt import docopt
-from colorama import Fore, Back, Style
+import argparse
 import datetime
 import glob
 import os
 import re
 import time
 import sys
+
+from colorama import Fore, Back, Style
+
 # import FoamMon
 from FoamMon import cui
 
-if __name__ == '__main__':
-    arguments = docopt(__doc__)
-    if arguments.get("--version"):
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="A small tool to check OpenFOAM log files for simulation progress and save points")
+    parser.add_argument("-v", "--version", action="store_true", help="Print version and exit")
+    parser.add_argument("--progressbar", action="store_true", help="Display the progressbar")
+    parser.add_argument("--folder", action="store_true", help="Display the foldername")
+    parser.add_argument("--logfile", action="store_true", help="Display the filename of the logfile")
+    parser.add_argument("--time", action="store_true", help="Display the the current simulation time")
+    parser.add_argument("--writeout", action="store_true", help="Display expected writeout")
+    parser.add_argument("--remaining", action="store_true", help="Display expected remaining simulation time")
+    parser.add_argument("--custom_filter", nargs=1, help="Further overview mode filter")
+
+    args = parser.parse_args()
+
+    if args.version:
         from FoamMon.version import __version__
         print(__version__)
-        print(arguments)
+        print(args)
         sys.exit(0)
 
-    cui.cui_main(arguments)
+    cui.cui_main(args)

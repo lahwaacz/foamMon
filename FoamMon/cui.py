@@ -1,15 +1,12 @@
+import os
+import json
+
 import urwid
 
-from .header import foamMonHeader
-import os
-from .FoamDataStructures import Cases, default_elements
-import threading
-import time
-import datetime
-
 import cProfile, pstats
-import sys
-import json
+
+from .header import foamMonHeader
+from .FoamDataStructures import Cases, default_elements
 
 # Set up color scheme
 palette = [
@@ -410,13 +407,34 @@ def cui_main(arguments):
     cases = Cases(os.getcwd())
 
     global COLUMNS
-    COLUMNS = {c: False if arguments.get("--" + c) == "False" else True
-               for c in ["progressbar", "folder", "logfile",
-                   "time", "writeout", "remaining"]
-            }
+    if arguments.progressbar:
+        COLUMNS["progressbar"] = True
+    else:
+        COLUMNS["progressbar"] = False
+    if arguments.folder:
+        COLUMNS["folder"] = True
+    else:
+        COLUMNS["folder"] = False
+    if arguments.logfile:
+        COLUMNS["logfile"] = True
+    else:
+        COLUMNS["logfile"] = False
+    if arguments.time:
+        COLUMNS["time"] = True
+    else:
+        COLUMNS["time"] = False
+    if arguments.writeout:
+        COLUMNS["writeout"] = True
+    else:
+        COLUMNS["writeout"] = False
+    if arguments.remaining:
+        COLUMNS["remaining"] = True
+    else:
+        COLUMNS["remaining"] = False
 
     global FILTER
-    FILTER = json.loads(arguments.get("--custom_filter"))
+    if arguments.custom_filter:
+        FILTER = json.loads(arguments.custom_filter)
 
     frame = LogMonFrame(cases)
     mainloop = urwid.MainLoop(frame, palette, handle_mouse=False)

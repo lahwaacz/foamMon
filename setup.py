@@ -24,7 +24,6 @@ config = {
     'version'                : version_git,
     'packages'               : ["FoamMon"],
     'install_requires'       : [
-         'docopt',
          'colorama',
          'urwid',
     ],
