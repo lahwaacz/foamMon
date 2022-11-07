@@ -440,7 +440,13 @@ def cui_main(arguments):
     mainloop.screen.set_terminal_properties(colors=256)
     frame.loop = mainloop
     frame.animate()
-    mainloop.run()
+    try:
+        mainloop.run()
+    except KeyboardInterrupt:
+        cases.running = False
+    except:
+        cases.running = False
+        raise
 
     # pr.disable()  # end profiling
     # sortby = 'cumulative'
