@@ -82,7 +82,7 @@ class Cases():
     def get_valid_cases(self):
         case_stats = {}
         cases = deepcopy(self.cases)
-        for r, cs in cases.items():
+        for r, cs in sorted(cases.items()):
             for c in cs:
                 c.refresh()
                 if c.log.active:
@@ -132,14 +132,13 @@ class Cases():
 
                 for d in dirs:
                     c = Case(os.path.join(r, d))
-                    subfold = r.split("/")[-1]
                     if c.is_valid:
                         exists = False
-                        for existing in self.cases[subfold]:
+                        for existing in self.cases[r]:
                             if c.path == existing.path:
                                 exists = True
                         if not exists:
-                            self.cases[subfold].append(c)
+                            self.cases[r].append(c)
 
 
     # def print_header(self, lengths):
