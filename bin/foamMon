@@ -23,6 +23,7 @@ if __name__ == "__main__":
     parser.add_argument("--writeout", action="store_true", help="Display expected writeout")
     parser.add_argument("--remaining", action="store_true", help="Display expected remaining simulation time")
     parser.add_argument("--custom_filter", nargs=1, help="Further overview mode filter")
+    parser.add_argument("directories", nargs="+", default=["."], help="Directories where OpenFOAM cases will be looked for")
 
     args = parser.parse_args()
 

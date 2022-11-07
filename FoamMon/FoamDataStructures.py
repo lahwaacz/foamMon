@@ -1,11 +1,7 @@
 from colorama import Fore, Back, Style
-# from datetime import datetime, timedelta
 import datetime
 import os
-try:
-        from walk import walk
-except ImportError:
-        from os import walk
+import sys
 
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -13,8 +9,6 @@ from collections import defaultdict
 from copy import deepcopy
 from .Log import Log
 from .header import foamMonHeader
-
-import sys
 
 
 def timedelta(seconds):
@@ -70,14 +64,21 @@ class ProgressBar():
 
 class Cases():
 
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, paths):
+        self.paths = paths
         os.system("clear")
-        self.mdates = {}
         self.cases = defaultdict(list)
-        self.p = ThreadPoolExecutor(1)
+
         self.running = True
-        self.future = self.p.submit(self.find_cases)
+        def worker():
+            while self.running:
+                self.find_cases()
+                for i in range(10):
+                    if not self.running:
+                        return
+                    time.sleep(1)
+        self.p = ThreadPoolExecutor(1)
+        self.future = self.p.submit(worker)
 
     def get_valid_cases(self):
         case_stats = {}
@@ -85,7 +86,7 @@ class Cases():
         for r, cs in cases.items():
             for c in cs:
                 c.refresh()
-                if (c.log.active):
+                if c.log.active:
                     c.log.refresh()
             case_stats[r] = {"active": [c.print_status_short() for c in cs
                     if (c.print_status_short() and c.log.active)],
@@ -108,37 +109,9 @@ class Cases():
         return lengths
 
     def find_cases(self):
-
-        while self.running:
-            # TODO store modification dates and traverse only
-            # on updated folder
-
-            top = self.path
-
-            c = Case(top)
-            subfold = top.split("/")[-1]
-            if c.is_valid:
-                exists = False
-                for existing in self.cases[subfold]:
-                    if c.path == existing.path:
-                        exists = True
-                if not exists:
-                    self.cases[subfold].append(c)
-
-            root_mdate = False
-
-            # rescan only if not scanned before or folder has changed
-            if root_mdate and os.path.getmtime(top) <= root_mdate:
-                # wait 10 seconds
-                for i in range(10):
-                    if not self.running:
-                        return
-                    time.sleep(10)
-                continue
-
-            root_mdate = os.path.getmtime(top)
-
-            for r, dirs, _ in walk(self.path):
+        for path in self.paths:
+            for r, dirs, _ in os.walk(path):
+                dirs.sort(reverse=True)
 
                 ignore = [
                     "boundaryData",
@@ -149,38 +122,25 @@ class Cases():
                     "lagrangian",
                     "postProcessing",
                     "dynamicCode",
-                    "system"]
+                    "system",
+                    "VTK",
+                ]
 
                 for d in deepcopy(dirs):
                     for i in ignore:
                         if d.startswith(i):
                             dirs.remove(d)
-                    full_path =  os.path.join(r, d)
-                    last_mdate = self.mdates.get(full_path)
-                    if last_mdate and os.path.getmtime(full_path) <= last_mdate:
-                        dirs.remove(d)
 
                 for d in dirs:
-                    try:
-                        c = Case(os.path.join(r, d))
-                        subfold = r.split("/")[-1]
-                        if c.is_valid:
-                            exists = False
-                            for existing in self.cases[subfold]:
-                                if c.path == existing.path:
-                                    exists = True
-                            if not exists:
-                                full_path =  os.path.join(r, d)
-                                self.mdates[full_path] = os.path.getmtime(full_path)
-                                self.cases[subfold].append(c)
-                    except Exception as e:
-                        print("innner", e, r, d)
-                        pass
-
-            for i in range(10):
-                if not self.running:
-                    return
-                time.sleep(1)
+                    c = Case(os.path.join(r, d))
+                    subfold = r.split("/")[-1]
+                    if c.is_valid:
+                        exists = False
+                        for existing in self.cases[subfold]:
+                            if c.path == existing.path:
+                                exists = True
+                        if not exists:
+                            self.cases[subfold].append(c)
 
 
     # def print_header(self, lengths):
@@ -289,7 +249,7 @@ class Case():
             proc_dir = os.path.join(self.path, "processor0")
             if not os.path.exists(proc_dir):
                 return 0
-            r, ds, _ = next(walk(proc_dir))
+            r, ds, _ = next(os.walk(proc_dir))
             rems = [ "constant",
                     "TDAC"]
             for rem in rems:
@@ -303,7 +263,7 @@ class Case():
                 return 0
         else:
             ts = []
-            r, ds, _ = next(walk(self.path))
+            r, ds, _ = next(os.walk(self.path))
             for t in ds:
                 try:
                     tsf = float(t)

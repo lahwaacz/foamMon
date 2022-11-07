@@ -404,7 +404,7 @@ def cui_main(arguments):
     # pr = cProfile.Profile()
     # pr.enable()  # start profilin
 
-    cases = Cases(os.getcwd())
+    cases = Cases(arguments.directories)
 
     global COLUMNS
     if arguments.progressbar:
