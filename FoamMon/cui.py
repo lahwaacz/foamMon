@@ -2,6 +2,7 @@ import os
 import json
 
 import urwid
+import urwid.curses_display
 
 import cProfile, pstats
 
@@ -436,8 +437,7 @@ def cui_main(arguments):
         FILTER = json.loads(arguments.custom_filter)
 
     frame = LogMonFrame(cases)
-    mainloop = urwid.MainLoop(frame, palette, handle_mouse=False)
-    mainloop.screen.set_terminal_properties(colors=256)
+    mainloop = urwid.MainLoop(frame, palette, handle_mouse=False, screen=urwid.curses_display.Screen())
     frame.loop = mainloop
     frame.animate()
     try:

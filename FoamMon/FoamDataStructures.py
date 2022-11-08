@@ -66,7 +66,6 @@ class Cases():
 
     def __init__(self, paths):
         self.paths = paths
-        os.system("clear")
         self.cases = defaultdict(list)
 
         self.running = True
@@ -376,7 +375,6 @@ class Case():
                 pass
             self.log.refresh()
             time.sleep(0.2)
-            os.system("clear")
 
 
 class Status():
