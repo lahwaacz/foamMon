@@ -14,19 +14,16 @@ class Log():
         self.path = path
         self.case = case
         if self.path:
-            self.mdate = os.path.getmtime(self.path)
+            self.mtime = os.path.getmtime(self.path)
             self.cached_header =  self.cache_header()
             self.cached_body = self.cache_body()
-            self.log = True
-        else:
-            self.log = False
 
     @property
     def is_valid(self):
         # TODO Fails on decompose logs
         if not self.path:
             return False
-        if (self.Exec == "decomposePar") or (self.Exec == "blockMesh") or (self.Exec == "mapFields"):
+        if self.Exec == "decomposePar" or self.Exec == "blockMesh" or self.Exec == "mapFields":
             return False
         try:
             self.get_SimTime(self.cached_body)
@@ -36,8 +33,12 @@ class Log():
             return False
 
     @property
+    def is_parallel(self):
+        return "-parallel" in self.Exec
+
+    @property
     def Exec(self):
-        return self.get_header_value("exec")
+        return self.get_header_value("Exec")
 
     @property
     def nProcs(self):
@@ -48,26 +49,15 @@ class Log():
         return self.get_header_value("Host")
 
     @property
-    def build(self):
-        return self.get_header_value("build")
-
-    @property
     def Case(self):
         return self.get_header_value("Case")
 
     @property
-    def PID(self):
-        return self.get_header_value("PID")
-
-    @property
-    def getmtime(self):
-        return os.path.getmtime(self.path)
-
-    @property
     def active(self):
-        if not self.log:
+        if not self.path:
             return False
-        return (time.time() - self.getmtime) < 60.0
+        mtime = os.path.getmtime(self.path)
+        return (time.time() - mtime) < 60
 
     def cache_header(self):
         """ read LEN_HEADER lines from log """
@@ -86,10 +76,10 @@ class Log():
             return fh.read(LEN_CACHE_BYTES).decode('utf-8') #.split("\n")
 
     def refresh(self):
-        cur_mdate = os.path.getmtime(self.path)
-        if self.mdate < cur_mdate:
+        mtime = os.path.getmtime(self.path)
+        if self.mtime < mtime:
             self.cached_body = self.cache_body()
-            self.mdate = cur_mdate
+            self.mtime = mtime
 
     def get_values(self, regex, chunk):
         return re.findall(regex, chunk)
@@ -115,18 +105,16 @@ class Log():
         return float(self.get_latest_value_or_default(regex, chunk, 0.0))
 
     def get_header_value(self, key):
-        ret =  re.findall("{: <7}: ([0-9A-Za-z]*)".format(key), self.cached_header)
+        ret = re.findall("{: <7}: (.+)".format(key), self.cached_header)
         if ret:
             return ret[0]
-        else:
-            return None
+        return None
 
     def text(self, filter_):
         lines = self.cache_body().split("\n")
         if filter_:
             return "\n".join([l for l in lines if filter_ in l])
-        else:
-            return "\n".join(lines)
+        return "\n".join(lines)
 
     def print_log_body(self):
         sep_width = 120
@@ -152,39 +140,24 @@ class Log():
     def wall_time(self):
         return self.get_ClockTime(self.cached_body)
 
-    def remaining_sim_time(self, endtime):
-        return endtime - self.sim_time
-
     @property
     def elapsed_sim_time(self):
         return self.sim_time - self.start_time
 
-    def progress(self, endtime):
-        return (self.sim_time)/endtime
+    @property
+    def progress(self):
+        return self.sim_time / self.case.endTime
 
     @property
     def sim_speed(self):
-        return max(1e-12, self.elapsed_sim_time/max(1.0, self.wall_time))
-
-    @property
-    def is_parallel(self):
-        # TODO use regex
-        for line in self.cached_header.split("\n"):
-            if 'Exec' in line and "-parallel" in line:
-                    return True
-        return False
-
-        return max(1e-12, self.elapsed_sim_time/self.wall_time)
+        return max(1e-12, self.elapsed_sim_time / max(1.0, self.wall_time))
 
     def timeleft(self):
         return self.time_till(self.case.endTime)
 
     def time_till_writeout(self):
-        return self.time_till(
-                self.case.last_timestep_ondisk
-              + self.case.writeInterval)
+        return self.time_till(self.case.last_timestep_ondisk + self.case.writeInterval)
 
     def time_till(self, end):
-        return self.remaining_sim_time(end)/(self.sim_speed)
-
+        return (end - self.sim_time) / self.sim_speed
 

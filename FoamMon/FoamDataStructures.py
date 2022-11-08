@@ -217,7 +217,7 @@ class Case():
         return ctDct
 
     def status_bar(self, digits=100):
-        bar = ProgressBar(digits, self.log.progress(self.endTime))
+        bar = ProgressBar(digits, self.log.progress)
         bar.add_event(self.startSamplingPerc, Fore.YELLOW)
         return bar.draw()
 
@@ -322,7 +322,7 @@ class Case():
 
     @property
     def startSamplingPerc(self):
-        return self.startSampling/self.endTime
+        return self.startSampling / self.endTime
 
     @property
     def simTime(self):
@@ -333,7 +333,7 @@ class Case():
             exc_info = sys.exc_info()
             return Status(
                     self,
-                    self.log.progress(self.endTime),
+                    self.log.progress,
                     # Style.BRIGHT if self.log.active else Style.DIM,
                     50,
                     self.log.active,
@@ -354,16 +354,17 @@ class Case():
         while True:
             self.log.print_log_body()
             try:
-                prog_prec = self.log.progress(self.endTime)*100.0
+                prog_prec = self.log.progress * 100
                 print(self.status_bar(100))
                 print("Case properties: ")
+                print("Exec: ", self.log.Exec)
                 print("Job start time: ", self.log.start_time)
-                print("Job elapsed_ time: ", timedelta(seconds=self.log.wall_time))
+                print("Job elapsed time: ", timedelta(seconds=self.log.wall_time))
                 print("Active: ", self.log.active)
                 print("Parallel: ", self.log.is_parallel)
                 print("Case end time: ", self.endTime)
                 print("Current sim time: ", self.log.sim_time)
-                print("Last time step on disk: ", self.last_timestep)
+                print("Last time step on disk: ", self.last_timestep_ondisk)
                 print("Time next writeout: ", timedelta(self.log.time_till_writeout()))
                 print("Progress: ", prog_prec)
                 print("Timeleft: ", timedelta(self.log.timeleft()))
