@@ -15,7 +15,8 @@ palette = [
     ('refresh button', 'dark green,bold', ''),
     ('progress', '', 'dark green'),
     ('unprogressed', '', 'dark blue'),
-    ('sampling', '', 'yellow'),
+    # urwid maps 'brown' to curses 'yellow': https://github.com/urwid/urwid/blob/06d79bc902abf86acb43779513cc81b18d9ddc9a/urwid/curses_display.py#L45
+    ('sampling', '', 'brown'),
     ('quit button', 'dark red,bold', ''),
     ('getting quote', 'dark blue', ''),
     ('active', 'white,bold', ''),
