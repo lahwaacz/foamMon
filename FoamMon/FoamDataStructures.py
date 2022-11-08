@@ -6,7 +6,6 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict
-from copy import deepcopy
 from .Log import Log
 from .header import foamMonHeader
 
@@ -81,8 +80,7 @@ class Cases():
 
     def get_valid_cases(self):
         case_stats = {}
-        cases = deepcopy(self.cases)
-        for r, cs in sorted(cases.items()):
+        for r, cs in sorted(self.cases.items()):
             for c in cs:
                 c.refresh()
                 if c.log.active:
@@ -125,7 +123,7 @@ class Cases():
                     "VTK",
                 ]
 
-                for d in deepcopy(dirs):
+                for d in dirs[:]:
                     for i in ignore:
                         if d.startswith(i):
                             dirs.remove(d)
