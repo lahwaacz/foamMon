@@ -2,21 +2,63 @@ import os
 import re
 import time
 
-LEN_CACHE = 10000 # max lines of log header
-LEN_CACHE_BYTES = 100*1024 # max lines of log header
-
-CACHE_HEADER = None
-CACHE_TAIL = None
+# max bytes of log that is read at once
+LEN_CACHE_BYTES = 100 * 1024
 
 class Log():
 
     def __init__(self, path, case):
         self.path = path
         self.case = case
+
         if self.path:
+            self.file = open(self.path, "rb")
             self.mtime = os.path.getmtime(self.path)
-            self.cached_header =  self.cache_header()
-            self.cached_body = self.cache_body()
+            self.cached_header = self.read_header()
+            self.cached_body = self.read_tail()
+        else:
+            self.file = None
+            self.mtime = None
+            self.cached_header = ""
+            self.cached_body = ""
+
+    def __del__(self):
+        if self.file is not None:
+            self.file.close()
+
+    def read_header(self):
+        """ read LEN_CACHE_BYTES bytes from the beginning of the log """
+        # seek to the beginning of the file
+        self.file.seek(0, os.SEEK_SET)
+        # read the header
+        header = self.file.read(LEN_CACHE_BYTES).decode("utf-8")
+        # end the header somewhere after the first occurrence of ClockTime
+        ctime = header.find("ClockTime")
+        padding = min(ctime+100, len(header))
+        header = header[0:padding] # use 100 padding chars
+        return header
+
+    def read_tail(self):
+        """ read LEN_CACHE_BYTES bytes from the end of the log """
+        # seek before the end
+        try:
+            self.file.seek(-LEN_CACHE_BYTES, os.SEEK_END)
+        except OSError:
+            # the seek call above fails when the file is shorter than LEN_CACHE_BYTES
+            self.file.seek(0, os.SEEK_SET)
+        # read the bytes
+        tail = self.file.read(LEN_CACHE_BYTES)
+        # skip until the first '\n' byte before decoding
+        # (it might contain an incomplete multibyte character)
+        tail = tail[tail.find(b"\n"):]
+        # return the decoded text
+        return tail.decode("utf-8")
+
+    def refresh(self):
+        mtime = os.path.getmtime(self.path)
+        if self.mtime < mtime:
+            self.cached_body = self.read_tail()
+            self.mtime = mtime
 
     @property
     def is_valid(self):
@@ -59,28 +101,6 @@ class Log():
         mtime = os.path.getmtime(self.path)
         return (time.time() - mtime) < 60
 
-    def cache_header(self):
-        """ read LEN_HEADER lines from log """
-        with open(self.path, "rb") as fh:
-            header = fh.read(LEN_CACHE_BYTES).decode('utf-8')
-            ctime = header.find("ClockTime")
-            padding = min(ctime+100, len(header))
-            header = header[0:padding] # use 100 padding chars
-            return header #.split("\n")
-
-    def cache_body(self):
-        """ read LEN_HEADER lines from log """
-        with open(self.path, "rb") as fh:
-            fh.seek(fh.tell(), os.SEEK_END)
-            fh.seek(max(0, fh.tell()-LEN_CACHE_BYTES), os.SEEK_SET)
-            return fh.read(LEN_CACHE_BYTES).decode('utf-8') #.split("\n")
-
-    def refresh(self):
-        mtime = os.path.getmtime(self.path)
-        if self.mtime < mtime:
-            self.cached_body = self.cache_body()
-            self.mtime = mtime
-
     def get_values(self, regex, chunk):
         return re.findall(regex, chunk)
 
@@ -111,7 +131,7 @@ class Log():
         return None
 
     def text(self, filter_):
-        lines = self.cache_body().split("\n")
+        lines = self.read_tail().split("\n")
         if filter_:
             return "\n".join([l for l in lines if filter_ in l])
         return "\n".join(lines)
