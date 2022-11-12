@@ -76,6 +76,8 @@ class Log():
 
     @property
     def is_parallel(self):
+        if self.Exec is None:
+            return False
         return "-parallel" in self.Exec
 
     @property
