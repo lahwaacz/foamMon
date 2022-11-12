@@ -195,15 +195,19 @@ class Case():
         return self.current_log
 
     def refresh(self):
-        self.log_fns = list(self.find_logs(self.log_format))
-        current_log_fn = self.find_recent_log_fn()
-        if self.current_log_fn != current_log_fn:
-            self.current_log_fn = current_log_fn
-            self.current_log = Log(current_log_fn, self)
+        if os.path.exists(self.path):
+            self.log_fns = list(self.find_logs(self.log_format))
+            current_log_fn = self.find_recent_log_fn()
+            if self.current_log_fn != current_log_fn:
+                self.current_log_fn = current_log_fn
+                self.current_log = Log(current_log_fn, self)
+        else:
+            self.log_fns = []
+            self.current_log_fn = ""
+            self.current_log = None
 
     @property
     def is_valid(self):
-        # print("check if valid", self.path)
         return self.has_controlDict and self.log.is_valid
 
     @property
@@ -212,8 +216,7 @@ class Case():
 
     @property
     def has_controlDict(self):
-        ctDct =  os.path.exists(self.controlDict_file)
-        return ctDct
+        return os.path.exists(self.controlDict_file)
 
     def status_bar(self, digits=100):
         bar = ProgressBar(digits, self.log.progress)
@@ -280,7 +283,7 @@ class Case():
         # TODO cach controlDict to avoid reopening file
         separator = " "
         key += separator
-        if self.has_controlDict:
+        try:
             with open(self.controlDict_file) as f:
                 for i, line in enumerate(f.readlines()):
                     if key in line:
@@ -289,7 +292,7 @@ class Case():
                                 .replace(' ', '')
                                 .replace(';', '')
                                 .replace('\n', ''))
-        else:
+        except FileNotFoundError:
             return None
 
     def get_float_controlDict(self, key):
