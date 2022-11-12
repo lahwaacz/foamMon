@@ -177,11 +177,13 @@ class Case():
             yield entry.path, entry.stat().st_mtime
 
     @property
+    def is_parallel(self):
+        return os.path.exists(os.path.join(self.path, "processor0"))
+
+    @property
     def last_timestep_ondisk(self):
-        if self.log.is_parallel:
+        if self.is_parallel:
             proc_dir = os.path.join(self.path, "processor0")
-            if not os.path.exists(proc_dir):
-                return 0
             r, ds, _ = next(os.walk(proc_dir))
             rems = [ "constant",
                     "TDAC"]
@@ -326,7 +328,7 @@ class Case():
         print("Job start time: ", self.start_time)
         print("Job elapsed time: ", timedelta(seconds=self.wall_time))
         print("Active: ", self.log.active)
-        print("Parallel: ", self.log.is_parallel)
+        print("Parallel: ", self.is_parallel)
         print("Case end time: ", self.endTime)
         print("Current sim time: ", self.sim_time)
         print("Last time step on disk: ", self.last_timestep_ondisk)

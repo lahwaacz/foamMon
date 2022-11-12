@@ -67,12 +67,6 @@ class Log():
             return False
 
     @property
-    def is_parallel(self):
-        if self.Exec is None:
-            return False
-        return "-parallel" in self.Exec
-
-    @property
     def Exec(self):
         return self.get_header_value("Exec")
 
