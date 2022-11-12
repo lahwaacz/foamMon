@@ -10,10 +10,6 @@ from .Log import Log
 from .header import foamMonHeader
 
 
-def timedelta(seconds):
-    return datetime.timedelta(seconds=int(max(0, seconds)))
-
-
 default_elements = ["progressbar", "folder", "logfile", "time", "writeout", "remaining"]
 
 
@@ -294,16 +290,23 @@ class Case():
 
     @property
     def sim_speed(self):
-        return max(1e-12, self.elapsed_sim_time / max(1.0, self.wall_time))
-
-    def timeleft(self):
-        return self.time_till(self.endTime)
-
-    def time_till_writeout(self):
-        return self.time_till(self.last_timestep_ondisk + self.writeInterval)
+        if self.wall_time == 0:
+            return 0
+        return self.elapsed_sim_time / self.wall_time
 
     def time_till(self, end):
-        return (end - self.sim_time) / self.sim_speed
+        if self.sim_speed == 0:
+            return datetime.timedelta.max
+        seconds = (end - self.sim_time) / self.sim_speed
+        return datetime.timedelta(seconds=int(seconds))
+
+    @property
+    def time_till_end(self):
+        return self.time_till(self.endTime)
+
+    @property
+    def time_till_writeout(self):
+        return self.time_till(self.last_timestep_ondisk + self.writeInterval)
 
     def get_status(self):
         return Status(
@@ -315,8 +318,8 @@ class Case():
                 self.folder,
                 os.path.basename(self.log.path),
                 self.sim_time,
-                timedelta(self.time_till_writeout()),
-                timedelta(self.timeleft()),
+                self.time_till_writeout,
+                self.time_till_end,
                 # Style.RESET_ALL
             )
 
@@ -326,15 +329,15 @@ class Case():
         print("Case properties: ")
         print("Exec: ", self.log.Exec)
         print("Job start time: ", self.start_time)
-        print("Job elapsed time: ", timedelta(seconds=self.wall_time))
+        print("Job elapsed time: ", datetime.timedelta(seconds=self.wall_time))
         print("Active: ", self.log.active)
         print("Parallel: ", self.is_parallel)
         print("Case end time: ", self.endTime)
         print("Current sim time: ", self.sim_time)
         print("Last time step on disk: ", self.last_timestep_ondisk)
-        print("Time next writeout: ", timedelta(self.time_till_writeout()))
+        print("Time next writeout: ", self.time_till_writeout)
         print("Progress: ", prog_prec)
-        print("Timeleft: ", timedelta(self.timeleft()))
+        print("time_till_end: ", self.time_till_end)
 
 
 class Status():
