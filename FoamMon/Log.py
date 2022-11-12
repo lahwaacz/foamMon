@@ -9,17 +9,10 @@ class Log():
 
     def __init__(self, path):
         self.path = path
-
-        if self.path:
-            self.file = open(self.path, "rb")
-            self.mtime = os.path.getmtime(self.path)
-            self.cached_header = self.read_header()
-            self.cached_body = self.read_tail()
-        else:
-            self.file = None
-            self.mtime = None
-            self.cached_header = ""
-            self.cached_body = ""
+        self.file = open(self.path, "rb")
+        self.mtime = os.path.getmtime(self.path)
+        self.cached_header = self.read_header()
+        self.cached_body = self.read_tail()
 
     def __del__(self):
         if self.file is not None:

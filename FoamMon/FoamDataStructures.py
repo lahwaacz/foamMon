@@ -178,7 +178,6 @@ class Case():
         self.log_format = log_format
         self.log_filter = log_filter
 
-        self.log_fns = []
         self.log = None
         self.refresh()
 
@@ -189,18 +188,18 @@ class Case():
 
     def refresh(self):
         if os.path.exists(self.path):
-            self.log_fns = list(self.find_logs(self.log_format))
-            current_log_fn = self.find_recent_log_fn()
-            if self.log is None or self.log.path != current_log_fn:
-                self.log = Log(current_log_fn)
-            self.log.refresh()
+            log_fns = list(self.find_logs(self.log_format))
+            if log_fns:
+                current_log_fn = self.find_recent_log_fn(log_fns)
+                if self.log is None or self.log.path != current_log_fn:
+                    self.log = Log(current_log_fn)
+                self.log.refresh()
         else:
-            self.log_fns = []
             self.log = None
 
     @property
     def is_valid(self):
-        return self.has_controlDict and self.log.is_valid
+        return self.has_controlDict and self.log and self.log.is_valid
 
     @property
     def started_sampling(self):
@@ -258,13 +257,11 @@ class Case():
             else:
                 return 0
 
-    def find_recent_log_fn(self):
-        try:
-            files, mtimes = zip(*self.log_fns)
-            latest_index = mtimes.index(max(mtimes))
-            return files[latest_index]
-        except:
-            return False
+    @staticmethod
+    def find_recent_log_fn(log_fns):
+        files, mtimes = zip(*log_fns)
+        latest_index = mtimes.index(max(mtimes))
+        return files[latest_index]
 
     @property
     def controlDict_file(self):
