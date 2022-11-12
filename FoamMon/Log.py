@@ -166,6 +166,8 @@ class Log():
 
     @property
     def progress(self):
+        if self.case.endTime == 0:
+            return 0
         return self.sim_time / self.case.endTime
 
     @property

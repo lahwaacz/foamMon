@@ -264,7 +264,7 @@ class Case():
             if ts:
                 return max(ts)
             else:
-                return 0.0
+                return 0
 
     def find_recent_log_fn(self):
         try:
@@ -324,6 +324,8 @@ class Case():
 
     @property
     def startSamplingPerc(self):
+        if self.endTime == 0:
+            return 0
         return self.startSampling / self.endTime
 
     @property
