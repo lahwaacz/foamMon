@@ -320,7 +320,7 @@ class Case():
 
     @property
     def startSampling(self):
-        return self.get_float_controlDict("timeStart")
+        return self.get_float_controlDict("startTime")
 
     @property
     def startSamplingPerc(self):
