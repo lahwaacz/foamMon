@@ -85,11 +85,10 @@ class Cases():
                 c.refresh()
                 if c.log.active:
                     c.log.refresh()
-            case_stats[r] = {"active": [c.print_status_short() for c in cs
-                    if (c.print_status_short() and c.log.active)],
-                        "inactive": [c.print_status_short() for c in cs
-                    if (c.print_status_short() and not c.log.active)]
-                    }
+            case_stats[r] = {
+                "active": [c.get_status() for c in cs if c.log.active],
+                "inactive": [c.get_status() for c in cs if not c.log.active],
+            }
         lengths = self.get_max_lengths(case_stats)
         return lengths, case_stats
 
@@ -187,7 +186,7 @@ class Case():
         self.refresh()
 
         if summary and self.log.active:
-            ret = self.print_status_short()
+            ret = self.get_status()
             if ret:
                 print(ret)
 
@@ -328,27 +327,20 @@ class Case():
     def simTime(self):
         return self.log.sim_time
 
-    def print_status_short(self):
-        try:
-            exc_info = sys.exc_info()
-            return Status(
-                    self,
-                    self.log.progress,
-                    # Style.BRIGHT if self.log.active else Style.DIM,
-                    50,
-                    self.log.active,
-                    self.folder,
-                    os.path.basename(self.log.path),
-                    self.log.sim_time,
-                    timedelta(self.log.time_till_writeout()),
-                    timedelta(self.log.timeleft()),
-                    # Style.RESET_ALL
-                    )
-        except Exception as e:
-            import traceback
-            print(e, self.path)
-            print(traceback.print_exception(*exc_info))
-            return False
+    def get_status(self):
+        return Status(
+                self,
+                self.log.progress,
+                # Style.BRIGHT if self.log.active else Style.DIM,
+                50,
+                self.log.active,
+                self.folder,
+                os.path.basename(self.log.path),
+                self.log.sim_time,
+                timedelta(self.log.time_till_writeout()),
+                timedelta(self.log.timeleft()),
+                # Style.RESET_ALL
+            )
 
     def print_status_full(self):
         while True:
