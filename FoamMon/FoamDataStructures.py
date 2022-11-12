@@ -200,7 +200,7 @@ class Case():
             current_log_fn = self.find_recent_log_fn()
             if self.current_log_fn != current_log_fn:
                 self.current_log_fn = current_log_fn
-                self.current_log = Log(current_log_fn, self)
+                self.current_log = Log(current_log_fn)
         else:
             self.log_fns = []
             self.current_log_fn = ""
@@ -212,14 +212,14 @@ class Case():
 
     @property
     def started_sampling(self):
-        return self.simTime > self.startSampling
+        return self.sim_time > self.startSampling
 
     @property
     def has_controlDict(self):
         return os.path.exists(self.controlDict_file)
 
     def status_bar(self, digits=100):
-        bar = ProgressBar(digits, self.log.progress)
+        bar = ProgressBar(digits, self.progress)
         bar.add_event(self.startSamplingPerc, Fore.YELLOW)
         return bar.draw()
 
@@ -329,42 +329,73 @@ class Case():
         return self.startSampling / self.endTime
 
     @property
-    def simTime(self):
-        return self.log.sim_time
+    def start_time(self):
+        return self.log.get_SimTime("header")
+
+    @property
+    def sim_time(self):
+        return self.log.get_SimTime()
+
+    @property
+    def wall_time(self):
+        return self.log.get_ClockTime()
+
+    @property
+    def elapsed_sim_time(self):
+        return self.sim_time - self.start_time
+
+    @property
+    def progress(self):
+        if self.endTime == 0:
+            return 0
+        return self.sim_time / self.endTime
+
+    @property
+    def sim_speed(self):
+        return max(1e-12, self.elapsed_sim_time / max(1.0, self.wall_time))
+
+    def timeleft(self):
+        return self.time_till(self.endTime)
+
+    def time_till_writeout(self):
+        return self.time_till(self.last_timestep_ondisk + self.writeInterval)
+
+    def time_till(self, end):
+        return (end - self.sim_time) / self.sim_speed
 
     def get_status(self):
         return Status(
                 self,
-                self.log.progress,
+                self.progress,
                 # Style.BRIGHT if self.log.active else Style.DIM,
                 50,
                 self.log.active,
                 self.folder,
                 os.path.basename(self.log.path),
-                self.log.sim_time,
-                timedelta(self.log.time_till_writeout()),
-                timedelta(self.log.timeleft()),
+                self.sim_time,
+                timedelta(self.time_till_writeout()),
+                timedelta(self.timeleft()),
                 # Style.RESET_ALL
             )
 
     def print_status_full(self):
         while True:
-            self.log.print_log_body()
+            self.log.print_log_body(self.log_filter)
             try:
-                prog_prec = self.log.progress * 100
+                prog_prec = self.progress * 100
                 print(self.status_bar(100))
                 print("Case properties: ")
                 print("Exec: ", self.log.Exec)
-                print("Job start time: ", self.log.start_time)
-                print("Job elapsed time: ", timedelta(seconds=self.log.wall_time))
+                print("Job start time: ", self.start_time)
+                print("Job elapsed time: ", timedelta(seconds=self.wall_time))
                 print("Active: ", self.log.active)
                 print("Parallel: ", self.log.is_parallel)
                 print("Case end time: ", self.endTime)
-                print("Current sim time: ", self.log.sim_time)
+                print("Current sim time: ", self.sim_time)
                 print("Last time step on disk: ", self.last_timestep_ondisk)
-                print("Time next writeout: ", timedelta(self.log.time_till_writeout()))
+                print("Time next writeout: ", timedelta(self.time_till_writeout()))
                 print("Progress: ", prog_prec)
-                print("Timeleft: ", timedelta(self.log.timeleft()))
+                print("Timeleft: ", timedelta(self.timeleft()))
             except Exception as e:
                 print(e)
                 pass

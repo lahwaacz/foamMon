@@ -7,9 +7,8 @@ LEN_CACHE_BYTES = 100 * 1024
 
 class Log():
 
-    def __init__(self, path, case):
+    def __init__(self, path):
         self.path = path
-        self.case = case
 
         if self.path:
             self.file = open(self.path, "rb")
@@ -68,7 +67,7 @@ class Log():
         if self.Exec == "decomposePar" or self.Exec == "blockMesh" or self.Exec == "mapFields":
             return False
         try:
-            self.get_SimTime(self.cached_body)
+            self.get_SimTime()
             return True
         except Exception as e:
             # print("Invalid Log", e)
@@ -115,14 +114,28 @@ class Log():
         except IndexError:
             return default
 
-    def get_ClockTime(self, chunk, last=True):
+    def get_ClockTime(self, which="body"):
+        if which == "body":
+            chunk = self.cached_body
+        elif which == "header":
+            chunk = self.cached_header
+        else:
+            raise ValueError("the 'which' parameter must equal either \"header\" or \"body\"")
+
         # NOTE some solver print only the ExecutionTime, thus both times are searched
         # if Execution and Clocktime are presented both are found and ExecutionTime
         # is discarded later
         regex = "(?:Execution|Clock)Time = ([0-9.]*) s"
         return float(self.get_latest_value_or_default(regex, chunk, 0.0))
 
-    def get_SimTime(self, chunk):
+    def get_SimTime(self, which="body"):
+        if which == "body":
+            chunk = self.cached_body
+        elif which == "header":
+            chunk = self.cached_header
+        else:
+            raise ValueError("the 'which' parameter must equal either \"header\" or \"body\"")
+
         regex = "\nTime = ([0-9.e\-]*)"
         return float(self.get_latest_value_or_default(regex, chunk, 0.0))
 
@@ -138,50 +151,15 @@ class Log():
             return "\n".join([l for l in lines if filter_ in l])
         return "\n".join(lines)
 
-    def print_log_body(self):
+    def print_log_body(self, log_filter=None):
         sep_width = 120
         print(self.path)
         print("="*sep_width)
-        if self.case.log_filter:
+        if log_filter is not None:
             lines = self.cached_body.split("\n")
-            filt_lines = [l for l in lines if self.case.log_filter in l][-30:-1]
+            filt_lines = [l for l in lines if log_filter in l][-30:-1]
             body_str = ("\n".join(filt_lines))
         else:
             body_str = ("\n".join(self.cached_body.split("\n")[-30:-1]))
         print(body_str)
-
-    @property
-    def start_time(self):
-        return self.get_SimTime(self.cached_header)
-
-    @property
-    def sim_time(self):
-        return self.get_SimTime(self.cached_body)
-
-    @property
-    def wall_time(self):
-        return self.get_ClockTime(self.cached_body)
-
-    @property
-    def elapsed_sim_time(self):
-        return self.sim_time - self.start_time
-
-    @property
-    def progress(self):
-        if self.case.endTime == 0:
-            return 0
-        return self.sim_time / self.case.endTime
-
-    @property
-    def sim_speed(self):
-        return max(1e-12, self.elapsed_sim_time / max(1.0, self.wall_time))
-
-    def timeleft(self):
-        return self.time_till(self.case.endTime)
-
-    def time_till_writeout(self):
-        return self.time_till(self.case.last_timestep_ondisk + self.case.writeInterval)
-
-    def time_till(self, end):
-        return (end - self.sim_time) / self.sim_speed
 
