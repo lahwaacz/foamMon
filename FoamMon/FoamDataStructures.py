@@ -166,10 +166,10 @@ class Cases():
         print(s)
 
     def print_status(self):
-        str_ = "\n".join([c.print_status_short()
-            for c in self.cases
-            if (c.print_status_short and c.log.active)])
-        print(str_)
+        for cc in self.cases.values():
+            for c in cc:
+                if c.log.active:
+                    c.print_status_full()
 
 
 class Case():
@@ -372,28 +372,21 @@ class Case():
             )
 
     def print_status_full(self):
-        while True:
-            self.log.print_log_body(self.log_filter)
-            try:
-                prog_prec = self.progress * 100
-                print(self.status_bar(100))
-                print("Case properties: ")
-                print("Exec: ", self.log.Exec)
-                print("Job start time: ", self.start_time)
-                print("Job elapsed time: ", timedelta(seconds=self.wall_time))
-                print("Active: ", self.log.active)
-                print("Parallel: ", self.log.is_parallel)
-                print("Case end time: ", self.endTime)
-                print("Current sim time: ", self.sim_time)
-                print("Last time step on disk: ", self.last_timestep_ondisk)
-                print("Time next writeout: ", timedelta(self.time_till_writeout()))
-                print("Progress: ", prog_prec)
-                print("Timeleft: ", timedelta(self.timeleft()))
-            except Exception as e:
-                print(e)
-                pass
-            self.log.refresh()
-            time.sleep(0.2)
+        self.log.print_log_body(self.log_filter)
+        prog_prec = self.progress * 100
+        print(self.status_bar(100))
+        print("Case properties: ")
+        print("Exec: ", self.log.Exec)
+        print("Job start time: ", self.start_time)
+        print("Job elapsed time: ", timedelta(seconds=self.wall_time))
+        print("Active: ", self.log.active)
+        print("Parallel: ", self.log.is_parallel)
+        print("Case end time: ", self.endTime)
+        print("Current sim time: ", self.sim_time)
+        print("Last time step on disk: ", self.last_timestep_ondisk)
+        print("Time next writeout: ", timedelta(self.time_till_writeout()))
+        print("Progress: ", prog_prec)
+        print("Timeleft: ", timedelta(self.timeleft()))
 
 
 class Status():
