@@ -83,8 +83,6 @@ class Cases():
         for r, cs in sorted(self.cases.items()):
             for c in cs:
                 c.refresh()
-                if c.log.active:
-                    c.log.refresh()
             case_stats[r] = {
                 "active": [c.get_status() for c in cs if c.log.active],
                 "inactive": [c.get_status() for c in cs if not c.log.active],
@@ -195,6 +193,7 @@ class Case():
             current_log_fn = self.find_recent_log_fn()
             if self.log is None or self.log.path != current_log_fn:
                 self.log = Log(current_log_fn)
+            self.log.refresh()
         else:
             self.log_fns = []
             self.log = None
