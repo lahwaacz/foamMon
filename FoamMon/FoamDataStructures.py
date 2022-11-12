@@ -181,8 +181,7 @@ class Case():
         self.log_filter = log_filter
 
         self.log_fns = []
-        self.current_log_fn = ""
-        self.current_log = None
+        self.log = None
         self.refresh()
 
         if summary and self.log.active:
@@ -190,21 +189,15 @@ class Case():
             if ret:
                 print(ret)
 
-    @property
-    def log(self):
-        return self.current_log
-
     def refresh(self):
         if os.path.exists(self.path):
             self.log_fns = list(self.find_logs(self.log_format))
             current_log_fn = self.find_recent_log_fn()
-            if self.current_log_fn != current_log_fn:
-                self.current_log_fn = current_log_fn
-                self.current_log = Log(current_log_fn)
+            if self.log is None or self.log.path != current_log_fn:
+                self.log = Log(current_log_fn)
         else:
             self.log_fns = []
-            self.current_log_fn = ""
-            self.current_log = None
+            self.log = None
 
     @property
     def is_valid(self):
