@@ -38,9 +38,6 @@ FILTER = {}
 
 class ProgressBar():
 
-
-    events = []
-
     def __init__(self, size, progress=0):
         self.size = size
         self.done_char = ("progress", " ")  # "█"

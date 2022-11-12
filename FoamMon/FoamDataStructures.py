@@ -16,50 +16,6 @@ def timedelta(seconds):
 
 default_elements = ["progressbar", "folder", "logfile", "time", "writeout", "remaining"]
 
-class ColoredProgressBar():
-
-
-    events = []
-
-    def __init__(self, size, progress=0):
-        self.size = size
-        self.done_char = Fore.GREEN + "█" + Style.RESET_ALL
-        self.undone_char = Fore.BLUE + "█" + Style.RESET_ALL
-        self.digits = [self.done_char
-                for _ in range(int(progress*size))]
-        self.digits.extend([self.undone_char
-                for _ in range(size - int(progress*size))])
-
-
-    def add_event(self, percentage, color):
-        index = int(percentage*self.size)
-        self.digits[index] = color + "█" + Style.RESET_ALL
-
-    def draw(self):
-        return "".join(self.digits)
-
-class ProgressBar():
-
-
-    events = []
-
-    def __init__(self, size, progress=0):
-        self.size = size
-        self.done_char = "█"
-        self.undone_char = "░"
-        self.digits = [self.done_char
-                for _ in range(int(progress*size))]
-        self.digits.extend([self.undone_char
-                for _ in range(size - int(progress*size))])
-
-
-    def add_event(self, percentage, color):
-        index = int(percentage*self.size)
-        self.digits[index] = "█"
-
-    def draw(self):
-        return "".join(self.digits)
-
 
 class Cases():
 
@@ -208,11 +164,6 @@ class Case():
     @property
     def has_controlDict(self):
         return os.path.exists(self.controlDict_file)
-
-    def status_bar(self, digits=100):
-        bar = ProgressBar(digits, self.progress)
-        bar.add_event(self.startSamplingPerc, Fore.YELLOW)
-        return bar.draw()
 
     def custom_filter_value(self, regex):
         return self.log.get_latest_value(regex, self.log.cached_body)
@@ -370,7 +321,6 @@ class Case():
     def print_status_full(self):
         self.log.print_log_body(self.log_filter)
         prog_prec = self.progress * 100
-        print(self.status_bar(100))
         print("Case properties: ")
         print("Exec: ", self.log.Exec)
         print("Job start time: ", self.start_time)
